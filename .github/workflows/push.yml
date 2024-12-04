@@ -1,0 +1,62 @@
+name: Push
+
+on:
+  - pull_request
+  - push
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.url || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  Linux-64:
+    name: Tests on Linux 64-bit
+
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - '8.4'
+          - '8.5'
+
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+
+      - name: Install PHP with extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: bcmath
+          ini-values: assert.exception=1, zend.assertions=1, error_reporting=-1, log_errors_max_len=0, display_errors=On
+          tools: none
+
+      - name: composer install
+        run: composer install -n --prefer-dist
+
+      - name: Run tests
+        if: matrix.php-version == '8.5'
+        run: |
+          ./vendor/bin/phpunit \
+            --configuration phpunit.xml.dist \
+            --testsuite=unit
+
+      - name: Run tests with coverage
+        if: matrix.php-version == '8.4'
+        run: |
+          XDEBUG_MODE=coverage ./vendor/bin/phpunit \
+            --configuration phpunit.xml.dist \
+            --testsuite=unit \
+            --coverage-clover ./coverage.xml
+
+      - uses: codecov/codecov-action@v5
+        if: matrix.php-version == '8.4'
+        with:
+          files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
