@@ -1,7 +1,10 @@
 # Fraction
 
+[![Latest Stable Version](https://poser.pugx.org/saki/fraction/v)](https://packagist.org/packages/saki/fraction)
 [![Push](https://github.com/SakiTakamachi/php-fraction/actions/workflows/push.yml/badge.svg)](https://github.com/SakiTakamachi/php-fraction/actions/workflows/push.yml)
 [![codecov](https://codecov.io/gh/SakiTakamachi/php-fraction/graph/badge.svg?token=4MIM2LRPRD)](https://codecov.io/gh/SakiTakamachi/php-fraction)
+[![License](https://poser.pugx.org/saki/fraction/license)](https://packagist.org/packages/saki/fraction)
+[![PHP Version Require](https://poser.pugx.org/saki/fraction/require/php)](https://packagist.org/packages/saki/fraction)
 
 ## Install
 
