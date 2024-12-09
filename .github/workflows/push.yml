@@ -21,8 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         php-version:
-          - '8.4'
-          - '8.5'
+          - '8.2'
+          - '8.3'
 
     steps:
       - name: git checkout
@@ -40,23 +40,7 @@ jobs:
         run: composer install -n --prefer-dist
 
       - name: Run tests
-        if: matrix.php-version == '8.5'
         run: |
           ./vendor/bin/phpunit \
             --configuration phpunit.xml.dist \
             --testsuite=unit
-
-      - name: Run tests with coverage
-        if: matrix.php-version == '8.4'
-        run: |
-          XDEBUG_MODE=coverage ./vendor/bin/phpunit \
-            --configuration phpunit.xml.dist \
-            --testsuite=unit \
-            --coverage-clover ./coverage.xml
-
-      - uses: codecov/codecov-action@v5
-        if: matrix.php-version == '8.4'
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
