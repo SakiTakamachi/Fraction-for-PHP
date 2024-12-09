@@ -20,13 +20,15 @@ unset($denominators[0]); // rm 0
 
 foreach ($numerators as $numerator) {
     foreach ($denominators as $denominator) {
-        $fraction = new Fraction($numerator, $denominator);
-        $str = "{$numerator}, {$denominator}: ";
-        $str = str_pad($str, 14, ' ', STR_PAD_LEFT);
-        $str .= $fraction->sign === Sign::Minus ? '-' : '+';
-        $str .= $fraction->numerator . '/';
-        $str .= $fraction->denominator . "\n";
-        echo $str;
+          $fraction = new Fraction($numerator, $denominator);
+          $str = "{$numerator}, {$denominator}: ";
+          $str = str_pad($str, 14, ' ', STR_PAD_LEFT);
+          if (substr($fraction->numerator, 0, 1) !== '-') {
+             $str .= '+';
+          }
+          $str .= $fraction->numerator . '/';
+          $str .= $fraction->denominator . "\n";
+          echo $str;
     }
 }
 ?>

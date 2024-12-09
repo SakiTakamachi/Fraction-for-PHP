@@ -11,7 +11,6 @@ use Stringable;
 
 final readonly class Fraction implements Stringable
 {
-    public Sign $sign;
     public Number $numerator;
     public Number $denominator;
     private NumberCache $numberCache;
@@ -29,32 +28,33 @@ final readonly class Fraction implements Stringable
             $denominator = new Number($denominator);
         }
 
-        if ($denominator == 0) {
+        if ($denominator->compare(0) === 0) {
             throw new InvalidArgumentException('The denominator is zero');
         }
 
         $this->numberCache = new NumberCache();
         $this->stringCache = new StringCache();
 
-        if ($numerator == 0) {
-            $this->sign = Sign::Plus;
+        $numeratorCompare = $numerator->compare(0);
+
+        if ($numeratorCompare === 0) {
             $this->numerator = new Number(0);
             $this->denominator = new Number(1);
             return;
         }
 
-        if ($numerator >= 0) {
+        if ($numeratorCompare > 0) {
             $numeratorSign = Sign::Plus;
         } else {
             $numeratorSign = Sign::Minus;
-            $numerator = -$numerator;
+            $numerator = $this->trimMinus($numerator);
         }
 
-        if ($denominator >= 0) {
+        if ($denominator->compare(0) >= 0) {
             $denominatorSign = Sign::Plus;
         } else {
             $denominatorSign = Sign::Minus;
-            $denominator = -$denominator;
+            $denominator = $this->trimMinus($denominator);
         }
 
         if ($numerator->scale !== 0 || $denominator->scale !== 0) {
@@ -66,8 +66,8 @@ final readonly class Fraction implements Stringable
 
         $commonDivisor = $this->getGcd($numerator, $denominator);
 
-        $this->sign = $numeratorSign == $denominatorSign ? Sign::Plus : Sign::Minus;
-        $this->numerator = $numerator->div($commonDivisor);
+        $sign = $numeratorSign == $denominatorSign ? Sign::Plus : Sign::Minus;
+        $this->numerator = $sign === Sign::Plus ? $numerator->div($commonDivisor) : (new Number("-{$numerator}"))->div($commonDivisor);
         $this->denominator = $denominator->div($commonDivisor);
     }
 
@@ -80,13 +80,18 @@ final readonly class Fraction implements Stringable
 
         return new Fraction($parts[0], $parts[1]);
     }
-    
+
     private static function createFractionFromMixed(Number|int|string $num): Fraction
     {
         if (is_string($num) && str_contains($num, '/')) {
             return self::createFromFractionString($num);
         }
         return new Fraction($num);
+    }
+
+    private function trimMinus(Number $num): Number
+    {
+        return new Number(substr($num, 1));
     }
 
     public function add(Fraction|Number|int|string $num): Fraction
@@ -110,13 +115,6 @@ final readonly class Fraction implements Stringable
         $numerator1 = $this->numerator->mul($num->denominator);
         $numerator2 = $num->numerator->mul($this->denominator);
 
-        if ($this->sign === Sign::Minus) {
-            $numerator1 = -$numerator1;
-        }
-        if ($num->sign === Sign::Minus) {
-            $numerator2 = -$numerator2;
-        }
-
         $numerator = $isAdd ? $numerator1->add($numerator2) : $numerator1->sub($numerator2);
 
         return new Fraction($numerator, $denominator);
@@ -131,10 +129,6 @@ final readonly class Fraction implements Stringable
         $numerator = $this->numerator->mul($num->numerator);
         $denominator = $this->denominator->mul($num->denominator);
 
-        if ($this->sign !== $num->sign) {
-            $numerator = -$numerator;
-        }
-
         return new Fraction($numerator, $denominator);
     }
 
@@ -144,16 +138,12 @@ final readonly class Fraction implements Stringable
             $num = Fraction::createFractionFromMixed($num); 
         }
 
-        if ($num->numerator == 0) {
+        if ($num->numerator->compare(0) === 0) {
             throw new InvalidArgumentException('Division by zero');
         }
 
         $numerator = $this->numerator->mul($num->denominator);
         $denominator = $this->denominator->mul($num->numerator);
-
-        if ($this->sign !== $num->sign) {
-            $numerator = -$numerator;
-        }
 
         return new Fraction($numerator, $denominator);
     }
@@ -164,7 +154,7 @@ final readonly class Fraction implements Stringable
             $num = Fraction::createFractionFromMixed($num); 
         }
 
-        if ($num->numerator == 0) {
+        if ($num->numerator->compare(0) === 0) {
             throw new InvalidArgumentException('Modulo by zero');
         }
 
@@ -173,11 +163,7 @@ final readonly class Fraction implements Stringable
         $numerator1 = $this->numerator->mul($num->denominator);
         $numerator2 = $num->numerator->mul($this->denominator);
 
-        if ($this->sign === Sign::Minus) {
-            $numerator1 = -$numerator1;
-        }
-
-        $rem = $numerator1 % $numerator2;
+        $rem = $numerator1->mod($numerator2);
 
         return new Fraction($rem, $denominator);
     }
@@ -189,7 +175,7 @@ final readonly class Fraction implements Stringable
             $num = Fraction::createFractionFromMixed($num); 
         }
 
-        if ($num->numerator == 0) {
+        if ($num->numerator->compare(0) === 0) {
             throw new InvalidArgumentException('Division by zero');
         }
 
@@ -199,14 +185,6 @@ final readonly class Fraction implements Stringable
         $numerator2 = $num->numerator->mul($this->denominator);
 
         [$quot, $rem] = $numerator1->divmod($numerator2);
-
-        if ($this->sign !== $num->sign) {
-            $quot = -$quot;
-        }
-
-        if ($this->sign === Sign::Minus) {
-            $rem = -$rem;
-        }
 
         return [
             new Fraction($quot),
@@ -224,17 +202,17 @@ final readonly class Fraction implements Stringable
             throw new InvalidArgumentException('The exponent must be an integer');
         }
 
-        if ($exponent == 0) {
+        if ($exponent->compare(0) === 0) {
             return new Fraction(1);
         }
 
-        $numerator = $this->sign === Sign::Minus ? -$this->numerator : $this->numerator;
+        $exponentCompare = $exponent->compare(0);
 
         return match (true) {
-            $exponent > 0 => new Fraction($numerator->pow($exponent), $this->denominator->pow($exponent)),
-            $exponent < 0 => $this->numerator == 0
+            $exponentCompare > 0 => new Fraction($this->numerator->pow($exponent), $this->denominator->pow($exponent)),
+            $exponentCompare < 0 => $this->numerator->compare(0) === 0
                 ? throw new InvalidArgumentException('Negative power of zero')
-                : new Fraction($this->denominator->pow(-$exponent), $numerator->pow(-$exponent)),
+                : new Fraction($this->denominator->pow($this->trimMinus($exponent)), $this->numerator->pow($this->trimMinus($exponent))),
         };
     }
 
@@ -247,21 +225,14 @@ final readonly class Fraction implements Stringable
         $numerator1 = $this->numerator->mul($num->denominator);
         $numerator2 = $num->numerator->mul($this->denominator);
 
-        if ($this->sign === Sign::Minus) {
-            $numerator1 = -$numerator1;
-        }
-        if ($num->sign === Sign::Minus) {
-            $numerator2 = -$numerator2;
-        }
-
-        return $numerator1 <=> $numerator2;
+        return $numerator1->compare($numerator2);
     }
 
     private function getGcd(Number $num1, Number $num2): Number
     {
         while (1) {
-            $r = $num1 % $num2;
-            if ($r == 0) {
+            $r = $num1->mod($num2);
+            if ($r->compare(0) === 0) {
                 return $num2;
             }
             $num1 = $num2;
@@ -276,19 +247,12 @@ final readonly class Fraction implements Stringable
         }
 
         $numeratorLen = strlen($this->numerator);
+        if ($this->numerator->compare(0) < 0) {
+            $numeratorLen--;
+        }
         $denominatorLen = strlen($this->denominator);
         $scale = $numeratorLen < $denominatorLen ? $denominatorLen - $numeratorLen : 0;
-        if ($scale > 0) {
-            $zeros = str_repeat('0', $scale);
-            $add = '0.' . $zeros;
-            $numerator = $this->numerator->add($add);
-        } else {
-            $numerator = $this->numerator;
-        }
-
-        if ($this->sign === Sign::Minus) {
-            $numerator = -$numerator;
-        }
+        $numerator = $this->numerator->add(0, $scale);
 
         $this->numberCache->value = $numerator->div($this->denominator);
 
@@ -301,8 +265,7 @@ final readonly class Fraction implements Stringable
             return $this->stringCache->value;
         }
 
-        $sign = $this->sign === Sign::Minus ? '-' : '';
-        $this->stringCache->value = "{$sign}{$this->numerator}/{$this->denominator}";
+        $this->stringCache->value = "{$this->numerator}/{$this->denominator}";
 
         return $this->stringCache->value;
     }
@@ -310,7 +273,7 @@ final readonly class Fraction implements Stringable
     public function __serialize(): array
     {
         return [
-            'numerator' => ($this->sign === Sign::Minus ? '-' : '') . (string) $this->numerator,
+            'numerator' => (string) $this->numerator,
             'denominator' => (string) $this->denominator,
         ];
     }
@@ -331,21 +294,21 @@ final readonly class Fraction implements Stringable
         if (
             $numerator->scale !== 0 ||
             $denominator->scale !== 0 ||
-            $denominator <= 0
+            $denominator->compare(0) <= 0
         ) {
             throw new InvalidArgumentException('Invalid serialized data');
         }
 
-        if ($numerator >= 0) {
-            $this->sign = Sign::Plus;
+        if ($numerator->compare(0) >= 0) {
+            $sign = Sign::Plus;
         } else {
-            $this->sign = Sign::Minus;
-            $numerator = -$numerator;
+            $sign = Sign::Minus;
+            $numerator = $this->trimMinus($numerator);
         }
 
         $commonDivisor = $this->getGcd($numerator, $denominator);
 
-        $this->numerator = $numerator->div($commonDivisor);
+        $this->numerator = $sign === Sign::Plus ? $numerator->div($commonDivisor) : (new Number("-{$numerator}"))->div($commonDivisor);
         $this->denominator = $denominator->div($commonDivisor);
         $this->numberCache = new NumberCache();
         $this->stringCache = new StringCache();

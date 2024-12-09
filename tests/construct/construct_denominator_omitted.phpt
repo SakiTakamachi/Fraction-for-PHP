@@ -23,7 +23,9 @@ foreach ($values as $value) {
     $fraction = new Fraction($value);
     $str = "{$value}: ";
     $str = str_pad($str, 6, ' ', STR_PAD_LEFT);
-    $str .= $fraction->sign === Sign::Minus ? '-' : '+';
+    if (substr($fraction->numerator, 0, 1) !== '-') {
+        $str .= '+';
+    }
     $str .= $fraction->numerator . '/';
     $str .= $fraction->denominator . "\n";
     echo $str;
