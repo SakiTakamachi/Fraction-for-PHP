@@ -4,15 +4,21 @@
 [![Push](https://github.com/SakiTakamachi/Fraction-for-PHP/actions/workflows/push.yml/badge.svg)](https://github.com/SakiTakamachi/Fraction-for-PHP/actions/workflows/push.yml)
 [![codecov](https://codecov.io/gh/SakiTakamachi/Fraction-for-PHP/graph/badge.svg?token=4MIM2LRPRD)](https://codecov.io/gh/SakiTakamachi/Fraction-for-PHP)
 [![License](https://poser.pugx.org/saki/fraction/license)](https://packagist.org/packages/saki/fraction)
-[![PHP Version Require](https://poser.pugx.org/saki/fraction/require/php)](https://packagist.org/packages/saki/fraction)
 
 ## Install
 
+For PHP 8.4:
 ```
-composer require saki/fraction
+composer require saki/fraction: "3.*"
 ```
 
-This library requires PHP 8.4 or higher and the BCMath extension.
+
+For PHP 8.3 and 8.2:
+```
+composer require saki/fraction: "2.*"
+```
+
+This library requires the BCMath extension.
 
 ## Description
 
