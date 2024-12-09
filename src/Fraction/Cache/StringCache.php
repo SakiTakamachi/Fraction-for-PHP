@@ -6,13 +6,20 @@ use LogicException;
 
 class StringCache
 {
-    public ?string $value = null
+    public ?string $value = null;
+
+    public function get(): ?string
     {
-        set {
-            if (!is_null($this->value)) {
-                throw new LogicException('Value is already set');
-            }
-            $this->value = $value;
+        return $this->value;
+    }
+
+    public function set(string $value): void
+    {
+        if (!is_null($this->value)) {
+            // @codeCoverageIgnoreStart
+            throw new LogicException('Value is already set');
+            // @codeCoverageIgnoreEnd
         }
+        $this->value = $value;
     }
 }

@@ -242,8 +242,8 @@ final readonly class Fraction implements Stringable
 
     public function toNumber(): Number
     {
-        if (!is_null($this->numberCache->value)) {
-            return $this->numberCache->value;
+        if (!is_null($this->numberCache->get())) {
+            return $this->numberCache->get();
         }
 
         $numeratorLen = strlen($this->numerator);
@@ -254,20 +254,20 @@ final readonly class Fraction implements Stringable
         $scale = $numeratorLen < $denominatorLen ? $denominatorLen - $numeratorLen : 0;
         $numerator = $this->numerator->add(0, $scale);
 
-        $this->numberCache->value = $numerator->div($this->denominator);
+        $this->numberCache->set($numerator->div($this->denominator));
 
-        return $this->numberCache->value;
+        return $this->numberCache->get();
     }
 
     public function __toString(): string
     {
-        if (!is_null($this->stringCache->value)) {
-            return $this->stringCache->value;
+        if (!is_null($this->stringCache->get())) {
+            return $this->stringCache->get();
         }
 
-        $this->stringCache->value = "{$this->numerator}/{$this->denominator}";
+        $this->stringCache->set("{$this->numerator}/{$this->denominator}");
 
-        return $this->stringCache->value;
+        return $this->stringCache->get();
     }
 
     public function __serialize(): array
